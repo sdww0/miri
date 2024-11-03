@@ -15,6 +15,9 @@
 #![feature(strict_provenance)]
 #![feature(exposed_provenance)]
 #![feature(pointer_is_aligned_to)]
+#![feature(generic_const_exprs)]
+#![feature(ptr_sub_ptr)]
+#![feature(const_ptr_sub_ptr)]
 // Configure clippy and other lints
 #![allow(
     clippy::collapsible_else_if,
@@ -75,6 +78,10 @@ extern crate rustc_target;
 #[allow(unused_extern_crates)]
 extern crate rustc_driver;
 
+extern crate alloc;
+pub use ostd_pod::Pod;
+
+
 mod alloc_addresses;
 mod alloc_bytes;
 mod borrow_tracker;
@@ -90,6 +97,11 @@ mod operator;
 mod provenance_gc;
 mod range_map;
 mod shims;
+pub mod mm;
+pub mod arch;
+pub mod error;
+
+pub use error::Error;
 
 // Establish a "crate-wide prelude": we often import `crate::*`.
 // Make all those symbols available in the same place as our own.
