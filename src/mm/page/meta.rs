@@ -18,7 +18,8 @@ pub mod mapping {
     use core::mem::size_of;
 
     use super::MetaSlot;
-    use crate::mm::{kspace::FRAME_METADATA_RANGE, Paddr, PagingConstsTrait, Vaddr, PAGE_SIZE};
+    use crate::mm::kspace::FRAME_METADATA_RANGE;
+    use crate::mm::{PAGE_SIZE, Paddr, PagingConstsTrait, Vaddr};
 
     /// Converts a physical address of a base page to the virtual address of the metadata slot.
     pub const fn page_to_meta<C: PagingConstsTrait>(paddr: Paddr) -> Vaddr {
@@ -36,25 +37,20 @@ pub mod mapping {
 }
 
 use alloc::vec::Vec;
-use core::{
-    cell::UnsafeCell,
-    marker::PhantomData,
-    mem::{size_of, ManuallyDrop},
-    panic,
-    sync::atomic::{AtomicU32, AtomicU8, Ordering},
-};
+use core::cell::UnsafeCell;
+use core::marker::PhantomData;
+use core::mem::{ManuallyDrop, size_of};
+use core::panic;
+use core::sync::atomic::{AtomicU8, AtomicU32, Ordering};
 
 use num_derive::FromPrimitive;
 
-use super::{Page};
-use crate::{
-    arch::mm::{PageTableEntry, PagingConsts},
-    mm::{
-        paddr_to_vaddr, page_size,
-        page_table::{PageTableEntryTrait},
-        CachePolicy, Paddr, PageFlags, PageProperty, PagingConstsTrait, PagingLevel,
-        PrivilegedPageFlags, Vaddr, PAGE_SIZE,
-    },
+use super::Page;
+use crate::arch::mm::{PageTableEntry, PagingConsts};
+use crate::mm::page_table::PageTableEntryTrait;
+use crate::mm::{
+    CachePolicy, PAGE_SIZE, Paddr, PageFlags, PageProperty, PagingConstsTrait, PagingLevel,
+    PrivilegedPageFlags, Vaddr, paddr_to_vaddr, page_size,
 };
 
 /// Represents the usage of a page.
@@ -136,10 +132,7 @@ pub(super) unsafe fn drop_as_last<M: PageMeta>(ptr: *const MetaSlot) {
     // This would be guaranteed as a safety requirement.
     debug_assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 0);
     // Let the custom dropper handle the drop.
-    let mut page = Page::<M> {
-        ptr,
-        _marker: PhantomData,
-    };
+    let mut page = Page::<M> { ptr, _marker: PhantomData };
     M::on_drop(&mut page);
     let _ = ManuallyDrop::new(page);
     // Drop the metadata.
@@ -278,4 +271,3 @@ impl PageMeta for KernelStackMeta {
     const USAGE: PageUsage = PageUsage::KernelStack;
     fn on_drop(_page: &mut Page<Self>) {}
 }
-

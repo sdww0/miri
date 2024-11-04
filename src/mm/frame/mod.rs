@@ -14,17 +14,11 @@ use core::mem::ManuallyDrop;
 
 pub use segment::Segment;
 
-use super::page::{
-    meta::{FrameMeta, PageMeta, PageUsage},
-    DynPage, Page,
-};
-use crate::{
-    mm::{
-        io::{FallibleVmRead, FallibleVmWrite, VmIo, VmReader, VmWriter},
-        paddr_to_vaddr, HasPaddr, Infallible, Paddr, PAGE_SIZE,
-    },
-    Error,
-};
+use super::page::meta::{FrameMeta, PageMeta, PageUsage};
+use super::page::{DynPage, Page};
+use crate::Error;
+use crate::mm::io::{FallibleVmRead, FallibleVmWrite, VmIo, VmReader, VmWriter};
+use crate::mm::{HasPaddr, Infallible, PAGE_SIZE, Paddr, paddr_to_vaddr};
 
 /// A handle to a physical memory page of untyped memory.
 ///
@@ -144,34 +138,26 @@ impl<'a> Frame {
 }
 
 impl VmIo for Frame {
-    fn read(&self, offset: usize, writer: &mut VmWriter) -> Result<(),crate::error::Error> {
+    fn read(&self, offset: usize, writer: &mut VmWriter) -> Result<(), crate::error::Error> {
         let read_len = writer.avail().min(self.size().saturating_sub(offset));
         // Do bound check with potential integer overflow in mind
         let max_offset = offset.checked_add(read_len).ok_or(Error::Overflow)?;
         if max_offset > self.size() {
             return Err(Error::InvalidArgs);
         }
-        let len = self
-            .reader()
-            .skip(offset)
-            .read_fallible(writer)
-            .map_err(|(e, _)| e)?;
+        let len = self.reader().skip(offset).read_fallible(writer).map_err(|(e, _)| e)?;
         debug_assert!(len == read_len);
         Ok(())
     }
 
-    fn write(&self, offset: usize, reader: &mut VmReader) -> Result<(),crate::error::Error> {
+    fn write(&self, offset: usize, reader: &mut VmReader) -> Result<(), crate::error::Error> {
         let write_len = reader.remain().min(self.size().saturating_sub(offset));
         // Do bound check with potential integer overflow in mind
         let max_offset = offset.checked_add(write_len).ok_or(Error::Overflow)?;
         if max_offset > self.size() {
             return Err(Error::InvalidArgs);
         }
-        let len = self
-            .writer()
-            .skip(offset)
-            .write_fallible(reader)
-            .map_err(|(e, _)| e)?;
+        let len = self.writer().skip(offset).write_fallible(reader).map_err(|(e, _)| e)?;
         debug_assert!(len == write_len);
         Ok(())
     }
@@ -188,7 +174,8 @@ impl PageMeta for FrameMeta {
 
 // Here are implementations for `xarray`.
 
-use core::{marker::PhantomData, ops::Deref};
+use core::marker::PhantomData;
+use core::ops::Deref;
 
 /// `FrameRef` is a struct that can work as `&'a Frame`.
 ///
@@ -205,4 +192,3 @@ impl Deref for FrameRef<'_> {
         &self.inner
     }
 }
-

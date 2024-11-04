@@ -19,6 +19,7 @@ pub mod vm_space;
 
 use core::fmt::Debug;
 use core::ops::Range;
+use std::sync::atomic::AtomicUsize;
 
 use page_table::KernelMode;
 
@@ -37,11 +38,21 @@ use crate::arch::mm::PagingConsts;
 /// The level of a page table node or a frame.
 pub type PagingLevel = u8;
 
+static PTBR: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_ptbr(paddr: Paddr) {
+    PTBR.store(paddr, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub fn get_ptbr() -> Paddr {
+    PTBR.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub fn vaddr_to_paddr(vaddr: Vaddr) -> (Paddr, PageProperty) {
-    let paddr = {
-        todo!();
-        0
-    };
+    let paddr = get_ptbr();
+    if paddr == 0 {
+        return (vaddr, PageProperty::new(PageFlags::RWX, CachePolicy::Writeback));
+    }
 
     let table: PageTable<KernelMode> = unsafe { PageTable::from_root_paddr(paddr, 4) };
     table.query(vaddr).unwrap()

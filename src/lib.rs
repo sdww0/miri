@@ -81,28 +81,26 @@ extern crate rustc_driver;
 extern crate alloc;
 pub use ostd_pod::Pod;
 
-
 mod alloc_addresses;
 mod alloc_bytes;
+pub mod arch;
 mod borrow_tracker;
 mod clock;
 mod concurrency;
 mod diagnostics;
+pub mod error;
 mod eval;
 mod helpers;
 mod intrinsics;
 mod machine;
+pub mod mm;
 mod mono_hash_map;
 mod operator;
 mod provenance_gc;
 mod range_map;
 mod shims;
-pub mod mm;
-pub mod arch;
-pub mod error;
 
 pub use error::Error;
-
 // Establish a "crate-wide prelude": we often import `crate::*`.
 // Make all those symbols available in the same place as our own.
 #[doc(no_inline)]

@@ -9,7 +9,7 @@ use crate::mm::page_prop::{
     CachePolicy, PageFlags, PageProperty, PrivilegedPageFlags as PrivFlags,
 };
 use crate::mm::page_table::PageTableEntryTrait;
-use crate::mm::{ Paddr, PagingConstsTrait, PagingLevel};
+use crate::mm::{Paddr, PagingConstsTrait, PagingLevel};
 
 pub(crate) const NR_ENTRIES_PER_PAGE: usize = 512;
 
@@ -56,17 +56,16 @@ bitflags::bitflags! {
     }
 }
 
-unsafe impl Pod for PageTableFlags{}
-
+unsafe impl Pod for PageTableFlags {}
 
 #[derive(Clone, Copy, Default)]
 #[repr(C)]
 pub struct PageTableEntry(usize);
 
-unsafe impl Pod for PageTableEntry{}
+unsafe impl Pod for PageTableEntry {}
 
 pub fn current_page_table_paddr() -> Paddr {
-todo!()    
+    todo!()
     // x86_64::registers::control::Cr3::read_raw().0.start_address().as_u64() as Paddr
 }
 

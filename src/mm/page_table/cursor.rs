@@ -65,17 +65,20 @@
 //! table cursor should add additional entry point checks to prevent these defined
 //! behaviors if they are not wanted.
 
-use core::{any::TypeId, marker::PhantomData, ops::Range};
+use core::any::TypeId;
+use core::marker::PhantomData;
+use core::ops::Range;
 
 use align_ext::AlignExt;
 
 use super::{
-    page_size, pte_index, Child, Entry, KernelMode, PageTable, PageTableEntryTrait, PageTableError,
-    PageTableMode, PageTableNode, PagingConstsTrait, PagingLevel, UserMode,
+    Child, Entry, KernelMode, PageTable, PageTableEntryTrait, PageTableError, PageTableMode,
+    PageTableNode, PagingConstsTrait, PagingLevel, UserMode, page_size, pte_index,
 };
-use crate::mm::{
-        kspace::should_map_as_tracked, page::{meta::PageTablePageMeta, DynPage, Page}, Paddr, PageProperty, Vaddr
-    };
+use crate::mm::kspace::should_map_as_tracked;
+use crate::mm::page::meta::PageTablePageMeta;
+use crate::mm::page::{DynPage, Page};
+use crate::mm::{Paddr, PageProperty, Vaddr};
 
 #[derive(Clone, Debug)]
 pub enum PageTableItem {
@@ -218,10 +221,7 @@ where
                     continue;
                 }
                 Child::None => {
-                    return Ok(PageTableItem::NotMapped {
-                        va,
-                        len: page_size::<C>(level),
-                    });
+                    return Ok(PageTableItem::NotMapped { va, len: page_size::<C>(level) });
                 }
                 Child::Page(page, prop) => {
                     return Ok(PageTableItem::Mapped { va, page, prop });

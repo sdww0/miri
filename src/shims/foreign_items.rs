@@ -3,6 +3,7 @@ use std::io::Write;
 use std::iter;
 use std::path::Path;
 
+use mm::{get_ptbr, set_ptbr};
 use rustc_apfloat::Float;
 use rustc_ast::expand::allocator::alloc_error_handler_name;
 use rustc_hir::def::DefKind;
@@ -492,6 +493,19 @@ trait EvalContextExtPriv<'tcx>: crate::MiriInterpCxExt<'tcx> {
                     }
                     this.write_null(dest)?;
                 }
+            }
+
+            "set_ptbr" => {
+                let [ptr] = this.check_shim(abi, Abi::Rust, link_name, args)?;
+                let ptr = this.read_target_usize(ptr)?;
+
+                set_ptbr(ptr as usize);
+            }
+
+            "get_ptbr" => {
+                let [] = this.check_shim(abi, Abi::Rust, link_name, args)?;
+                let paddr = get_ptbr();
+                this.write_scalar(Scalar::from_target_usize(paddr.try_into().unwrap(), this), dest);
             }
 
             // Rust allocation

@@ -28,22 +28,17 @@
 mod child;
 mod entry;
 
-use core::{marker::PhantomData, mem::ManuallyDrop, sync::atomic::Ordering};
+use core::marker::PhantomData;
+use core::mem::ManuallyDrop;
+use core::sync::atomic::Ordering;
 
-pub(in crate::mm) use self::{child::Child, entry::Entry};
-use super::{nr_subpage_per_huge, PageTableEntryTrait};
-use crate::{
-    arch::mm::{PageTableEntry, PagingConsts},
-    mm::{
-        paddr_to_vaddr,
-        page::{
-            self, inc_page_ref_count,
-            meta::{MapTrackingStatus, PageMeta, PageTablePageMeta, PageUsage},
-            DynPage, Page,
-        },
-        Paddr, PagingConstsTrait, PagingLevel, PAGE_SIZE,
-    },
-};
+pub(in crate::mm) use self::child::Child;
+pub(in crate::mm) use self::entry::Entry;
+use super::{PageTableEntryTrait, nr_subpage_per_huge};
+use crate::arch::mm::{PageTableEntry, PagingConsts};
+use crate::mm::page::meta::{MapTrackingStatus, PageMeta, PageTablePageMeta, PageUsage};
+use crate::mm::page::{self, DynPage, Page, inc_page_ref_count};
+use crate::mm::{PAGE_SIZE, Paddr, PagingConstsTrait, PagingLevel, paddr_to_vaddr};
 
 /// The raw handle to a page table node.
 ///
@@ -82,11 +77,7 @@ where
 
         // Acquire the lock.
         let meta = page.meta();
-        while meta
-            .lock
-            .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
+        while meta.lock.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
             core::hint::spin_loop();
         }
 
@@ -99,13 +90,9 @@ where
     pub(super) fn clone_shallow(&self) -> Self {
         self.inc_ref_count();
 
-        Self {
-            raw: self.raw,
-            level: self.level,
-            _phantom: PhantomData,
-        }
+        Self { raw: self.raw, level: self.level, _phantom: PhantomData }
     }
-    
+
     fn inc_ref_count(&self) {
         // SAFETY: We have a reference count to the page and can safely increase the reference
         // count by one more.
@@ -122,11 +109,7 @@ where
     /// a forgotten page table node. A forgotten page table node can only be
     /// restored once. The level must match the level of the page table node.
     pub unsafe fn from_raw_parts(paddr: Paddr, level: PagingLevel) -> Self {
-        Self {
-            raw: paddr,
-            level,
-            _phantom: PhantomData,
-        }
+        Self { raw: paddr, level, _phantom: PhantomData }
     }
 }
 

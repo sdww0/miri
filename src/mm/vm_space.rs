@@ -71,7 +71,6 @@ impl VmSpace {
     /// cursor may also block or be overridden the mapping of another cursor.
     pub fn cursor_mut(&self, va: &Range<Vaddr>) -> Result<CursorMut<'_>, crate::error::Error> {
         Ok(self.pt.cursor_mut(va).map(|pt_cursor| {
-
             // The activation lock is held; other CPUs cannot activate this `VmSpace`.
             let ptr = ACTIVATED_VM_SPACE.load(Ordering::Relaxed) as *const VmSpace;
 

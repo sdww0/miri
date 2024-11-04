@@ -3,10 +3,12 @@
 //! A contiguous range of pages.
 
 use alloc::vec::Vec;
-use core::{mem::ManuallyDrop, ops::Range};
+use core::mem::ManuallyDrop;
+use core::ops::Range;
 
-use super::{inc_page_ref_count, meta::PageMeta, Page};
-use crate::mm::{Paddr, PAGE_SIZE};
+use super::meta::PageMeta;
+use super::{Page, inc_page_ref_count};
+use crate::mm::{PAGE_SIZE, Paddr};
 
 /// A contiguous range of physical memory pages.
 ///
@@ -41,10 +43,7 @@ impl<M: PageMeta> Clone for ContPages<M> {
             // reference counts for the pages.
             unsafe { inc_page_ref_count(paddr) };
         }
-        Self {
-            range: self.range.clone(),
-            _marker: core::marker::PhantomData,
-        }
+        Self { range: self.range.clone(), _marker: core::marker::PhantomData }
     }
 }
 
@@ -67,10 +66,7 @@ impl<M: PageMeta> ContPages<M> {
         for paddr in range.clone().step_by(PAGE_SIZE) {
             let _ = ManuallyDrop::new(Page::<M>::from_unused(paddr, metadata_fn(paddr)));
         }
-        Self {
-            range,
-            _marker: core::marker::PhantomData,
-        }
+        Self { range, _marker: core::marker::PhantomData }
     }
 
     /// Gets the start physical address of the contiguous pages.
@@ -104,16 +100,10 @@ impl<M: PageMeta> ContPages<M> {
         let old = ManuallyDrop::new(self);
         let at = old.range.start + offset;
 
-        (
-            Self {
-                range: old.range.start..at,
-                _marker: core::marker::PhantomData,
-            },
-            Self {
-                range: at..old.range.end,
-                _marker: core::marker::PhantomData,
-            },
-        )
+        (Self { range: old.range.start..at, _marker: core::marker::PhantomData }, Self {
+            range: at..old.range.end,
+            _marker: core::marker::PhantomData,
+        })
     }
 
     /// Gets an extra handle to the pages in the byte offset range.
@@ -138,10 +128,7 @@ impl<M: PageMeta> ContPages<M> {
             unsafe { inc_page_ref_count(paddr) };
         }
 
-        Self {
-            range: start..end,
-            _marker: core::marker::PhantomData,
-        }
+        Self { range: start..end, _marker: core::marker::PhantomData }
     }
 }
 
@@ -149,10 +136,7 @@ impl<M: PageMeta> From<Page<M>> for ContPages<M> {
     fn from(page: Page<M>) -> Self {
         let pa = page.paddr();
         let _ = ManuallyDrop::new(page);
-        Self {
-            range: pa..pa + PAGE_SIZE,
-            _marker: core::marker::PhantomData,
-        }
+        Self { range: pa..pa + PAGE_SIZE, _marker: core::marker::PhantomData }
     }
 }
 

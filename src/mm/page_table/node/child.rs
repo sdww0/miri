@@ -2,17 +2,15 @@
 
 //! This module specifies the type of the children of a page table node.
 
-use core::{mem::ManuallyDrop, panic};
+use core::mem::ManuallyDrop;
+use core::panic;
 
 use super::{PageTableEntryTrait, RawPageTableNode};
-use crate::{
-    arch::mm::{PageTableEntry, PagingConsts},
-    mm::{
-        page::{inc_page_ref_count, meta::MapTrackingStatus, DynPage},
-        page_prop::PageProperty,
-        Paddr, PagingConstsTrait, PagingLevel,
-    },
-};
+use crate::arch::mm::{PageTableEntry, PagingConsts};
+use crate::mm::page::meta::MapTrackingStatus;
+use crate::mm::page::{DynPage, inc_page_ref_count};
+use crate::mm::page_prop::PageProperty;
+use crate::mm::{Paddr, PagingConstsTrait, PagingLevel};
 
 /// A child of a page table node.
 ///
@@ -53,12 +51,10 @@ where
     ) -> bool {
         match self {
             Child::PageTable(pt) => node_level == pt.level() + 1,
-            Child::Page(p, _) => {
-                node_level == p.level() && is_tracked == MapTrackingStatus::Tracked
-            }
-            Child::Untracked(_, level, _) => {
-                node_level == *level && is_tracked == MapTrackingStatus::Untracked
-            }
+            Child::Page(p, _) =>
+                node_level == p.level() && is_tracked == MapTrackingStatus::Tracked,
+            Child::Untracked(_, level, _) =>
+                node_level == *level && is_tracked == MapTrackingStatus::Untracked,
             Child::None => true,
         }
     }

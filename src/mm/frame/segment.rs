@@ -4,13 +4,11 @@
 
 use core::ops::Range;
 
-use crate::{
-    mm::{
-        io::{FallibleVmRead, FallibleVmWrite},
-        page::{meta::FrameMeta, ContPages},
-        Frame, HasPaddr, Infallible, Paddr, VmIo, VmReader, VmWriter,
-    },
-    Error, };
+use crate::Error;
+use crate::mm::io::{FallibleVmRead, FallibleVmWrite};
+use crate::mm::page::ContPages;
+use crate::mm::page::meta::FrameMeta;
+use crate::mm::{Frame, HasPaddr, Infallible, Paddr, VmIo, VmReader, VmWriter};
 
 /// A contiguous segment of untyped memory pages.
 ///
@@ -47,9 +45,7 @@ impl HasPaddr for Segment {
 
 impl Clone for Segment {
     fn clone(&self) -> Self {
-        Self {
-            pages: self.pages.clone(),
-        }
+        Self { pages: self.pages.clone() }
     }
 }
 
@@ -93,9 +89,7 @@ impl Segment {
     /// The function panics if the byte range is out of bounds, or if any of
     /// the ends of the byte range is not base-page aligned.
     pub fn slice(&self, range: &Range<usize>) -> Self {
-        Self {
-            pages: self.pages.slice(range),
-        }
+        Self { pages: self.pages.slice(range) }
     }
 
     /// Gets a [`VmReader`] to read from the segment from the beginning to the end.
@@ -121,9 +115,7 @@ impl Segment {
 
 impl From<Frame> for Segment {
     fn from(frame: Frame) -> Self {
-        Self {
-            pages: ContPages::from(frame.page),
-        }
+        Self { pages: ContPages::from(frame.page) }
     }
 }
 
@@ -134,34 +126,26 @@ impl From<ContPages<FrameMeta>> for Segment {
 }
 
 impl VmIo for Segment {
-    fn read(&self, offset: usize, writer: &mut VmWriter) -> Result<(),crate::error::Error> {
+    fn read(&self, offset: usize, writer: &mut VmWriter) -> Result<(), crate::error::Error> {
         let read_len = writer.avail();
         // Do bound check with potential integer overflow in mind
         let max_offset = offset.checked_add(read_len).ok_or(Error::Overflow)?;
         if max_offset > self.nbytes() {
             return Err(Error::InvalidArgs);
         }
-        let len = self
-            .reader()
-            .skip(offset)
-            .read_fallible(writer)
-            .map_err(|(e, _)| e)?;
+        let len = self.reader().skip(offset).read_fallible(writer).map_err(|(e, _)| e)?;
         debug_assert!(len == read_len);
         Ok(())
     }
 
-    fn write(&self, offset: usize, reader: &mut VmReader) -> Result<(),crate::error::Error> {
+    fn write(&self, offset: usize, reader: &mut VmReader) -> Result<(), crate::error::Error> {
         let write_len = reader.remain();
         // Do bound check with potential integer overflow in mind
         let max_offset = offset.checked_add(reader.remain()).ok_or(Error::Overflow)?;
         if max_offset > self.nbytes() {
             return Err(Error::InvalidArgs);
         }
-        let len = self
-            .writer()
-            .skip(offset)
-            .write_fallible(reader)
-            .map_err(|(e, _)| e)?;
+        let len = self.writer().skip(offset).write_fallible(reader).map_err(|(e, _)| e)?;
         debug_assert!(len == write_len);
         Ok(())
     }
